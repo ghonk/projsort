@@ -25,12 +25,17 @@ library(MASS)
 library(mi)
 
 # # TODOOOOS # #
-# # need to change log and gaus function to take a list of conditions, zelig generally busted
+# # need to change log and gaus function to take a list of conditions
+# # zelig generally busted
 # # full data splitter bug
 # # sort accuracy as predictor
-# # hi/lo unit scores as split variable 
+# # hi/lo unit scores as split variable
+# # number of sorts completed as predictor for e3, fa 
 # # performance on prior exps as a predictor 
-	
+# # FA has no ids?
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #	
 # # # # define some functions
 # # # #
 
@@ -39,7 +44,7 @@ library(mi)
 printspace <- function(numspaces,printline){
 	if (printline==1)
 		{
-		print(rep("___", 28))
+		print(rep("___", 24))
 		}
 	cat(rep("\n",numspaces))
 	}
@@ -171,17 +176,24 @@ zeligmidata <- function(experiment, impdata){
 	
 # # # # iterable zelig hierarchical regression modelling function
 iterzelig <- function(experiment, variables, modeltype, conditions){
-	# # # # analyze each variable of the target type
+	# # # # analyze each variable of the target type	
 	for (vars in variables){
-		modelname = paste0(vars,"Xe",experiment)
-		modelsumname = paste0(modelname, "_sum")
-		# # # # run model
-		tempcom = paste0(modelname, ' <<- zelig(',vars,' ~ as.factor(',conditions[1],
-							')+as.numeric(Zunit1Score)+tag(1|teacher/class),model = \"',
-							modeltype,'\",data = tempdata,cite=FALSE)')
-		eval(parse(text=tempcom))
-		print(eval(parse(text=paste0(modelsumname, " <<- summary(", modelname,")"))))			
-		printspace(3,1)
+		varname = paste0(vars,"_modlist")
+		condcount = 1
+		for (condition in conditions){
+			print(vars)
+			print(condition)
+			modelname = paste0(varname,"X",condcount,"e",experiment)
+			modelsumname = paste0(modelname, "_sum")
+			# # # # run model
+			tempcom = paste0(modelname, ' <<- zelig(',vars,' ~ as.factor(',condition,
+								')+as.numeric(Zunit1Score)+tag(1|teacher/class),model = \"',
+								modeltype,'\",data = tempdata,cite=FALSE)')
+			eval(parse(text=tempcom))
+			print(eval(parse(text=paste0(modelsumname, " <<- summary(", modelname,")"))))			
+			printspace(2,0)
+			}
+		printspace(2,1)
 		}
 	}
 
@@ -471,6 +483,7 @@ for (experiment in 1:3){
 save.image("ordinaldata.rdata")
 readline("Ordinal analyses complete. <return>") 
 
+
 # # don't load on skynet
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -487,34 +500,16 @@ for (experiment in 1:3){
 	# # # # analyze e1
 	if (experiment == 1){
 		tempdata = zeligmidata(experiment, impdata_e1)
-		e1condset[[1]] = "cond_E1_BL"
-		iterzelig(experiment, e1gausvars, "ls.mixed", e1condset)
-		iterzelig(experiment, e1bivars, "logit.mixed", e1condset)
-		e1condset[[1]] = "cond_E1_noFB"
 		iterzelig(experiment, e1gausvars, "ls.mixed", e1condset)
 		iterzelig(experiment, e1bivars, "logit.mixed", e1condset)
 		}
 	if (experiment == 2){
-		e2condset[[1]] = "cond_E2_LDS"
 		tempdata = zeligmidata(experiment, impdata_e2)
-		iterzelig(experiment, e2gausvars, "ls.mixed", e2condset)
-		iterzelig(experiment, e2bivars, "logit.mixed", e2condset)
-		e2condset[[1]] = "cond_E2_SL"
-		iterzelig(experiment, e2gausvars, "ls.mixed", e2condset)
-		iterzelig(experiment, e2bivars, "logit.mixed", e2condset)
-		e2condset[[1]] = "cond_E2_LS"
 		iterzelig(experiment, e2gausvars, "ls.mixed", e2condset)
 		iterzelig(experiment, e2bivars, "logit.mixed", e2condset)
 		}
 	if (experiment == 3){
-		e3condset[[1]] = "cond_E3_M"
 		tempdata = zeligmidata(experiment, impdata_e3)
-		iterzelig(experiment, e3gausvars, "ls.mixed", e3condset)
-		iterzelig(experiment, e3bivars, "logit.mixed", e3condset)
-		e3condset[[1]] = "cond_E3_Single"
-		iterzelig(experiment, e3gausvars, "ls.mixed", e3condset)
-		iterzelig(experiment, e3bivars, "logit.mixed", e3condset)
-		e3condset[[1]] = "cond_E3_Spaced"
 		iterzelig(experiment, e3gausvars, "ls.mixed", e3condset)
 		iterzelig(experiment, e3bivars, "logit.mixed", e3condset)
 		}
